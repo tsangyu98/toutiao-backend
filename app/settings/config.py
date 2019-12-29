@@ -10,6 +10,11 @@ class DefaultConfig:
     REDIS_LOCATION = "127.0.0.1"
     REDIS_PORT = 6381
 
+    # jwt过期时间
+    JWT_EXPIRE_DAYS = 14
+    JWT_SECRET = "gciLfSjy5pc5/1iusAC2ZiygkyI="
+
+
 
 config_dict = {
     "dev": DefaultConfig

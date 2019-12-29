@@ -9,8 +9,6 @@ from utils.constants import EXTRA_ENV_CONFIG
 from flask_sqlalchemy import SQLAlchemy
 from redis import StrictRedis
 
-
-db = SQLAlchemy()
 redis_cli = None
 
 
@@ -32,11 +30,25 @@ def create_flask_app(type):
 def register_extensions(app):
     """组件初始化"""
     # mysql组件初始化
+    from models import db
     db.init_app(app)
     # Redis配置
     global redis_cli
-    redis_cli = StrictRedis(host=app.config['REDIS_LOCATION'], port=app.config['REDIS_PORT'])
+    redis_cli = StrictRedis(host=app.config['REDIS_LOCATION'], port=app.config['REDIS_PORT'], decode_responses=True)
 
+    # 注册转换器
+    from utils.converters import register_converters
+    register_converters(app)
+
+    # 添加钩子函数
+    from utils.middlewares import get_user_info
+    app.before_request(get_user_info)
+
+
+def register_bp(app: Flask):
+    """注册蓝图"""
+    from app.resources.user import user_bp  # 进行局部导入，避免组件没有初始化完成
+    app.register_blueprint(user_bp)
 
 
 def create_app(type):
@@ -45,5 +57,7 @@ def create_app(type):
     app = create_flask_app(type)
     # 组件初始化
     register_extensions(app)
+    # 注册蓝图
+    register_bp(app)
     # 返回应用
     return app
