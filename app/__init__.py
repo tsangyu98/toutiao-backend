@@ -48,7 +48,10 @@ def register_extensions(app):
 def register_bp(app: Flask):
     """注册蓝图"""
     from app.resources.user import user_bp  # 进行局部导入，避免组件没有初始化完成
-    app.register_blueprint(user_bp)
+    app.register_blueprint(user_bp)  # 注册用户蓝图
+
+    from app.resources.article import article_bp
+    app.register_blueprint(article_bp)  # 注册文章蓝图
 
 
 def create_app(type):

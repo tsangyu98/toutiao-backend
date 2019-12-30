@@ -16,7 +16,3 @@ def get_user_info():
         if data:
             # 校验成功
             g.userid = data.get('userid')  # 如果已登录, userid=11
-
-        else:  # 校验失败
-            return jsonify({'message': 'Invalid Token', 'data': None}), 401
-
