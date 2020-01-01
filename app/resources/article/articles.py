@@ -36,7 +36,7 @@ class ArticleListResource(Resource):
         datas = db.session.query(Article.id, Article.title, Article.user_id, Article.ctime, User.name, Article.comment_count, Article.cover).join(User, Article.user_id == User.id).filter(Article.channel_id == channel_id, Article.status == Article.STATUS.APPROVED, Article.ctime < date).order_by(Article.ctime.desc()).limit(HOME_PER_PAGE).all()
 
         # 序列化
-        articles = [{'art_id': data.id, 'title': data.title, 'aut_id': data.user_id, 'pubdate': data.ctime.isoformat(), 'aut_name':data.name, 'comm_count': data.comment_count, 'cover': data.cover} for data in datas]
+        articles = [{'art_id': data.id, 'title': data.title, 'aut_id': data.user_id, 'pubdate': data.ctime.isoformat(), 'aut_name': data.name, 'comm_count': data.comment_count, 'cover': data.cover} for data in datas]
 
         # 设置pre_timestamp
         pre_timestamp = datas[-1].ctime.timestamp() * 1000 if datas else 0

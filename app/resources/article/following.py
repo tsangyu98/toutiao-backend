@@ -37,7 +37,9 @@ class FollowUserResource(Resource):
         # db.session.commit()
 
         # 第二种方式
-        update_statement = insert(Relation).values([{'user_id': userid, 'target_user_id': aut_id, 'relation': Relation.RELATION.FOLLOW}]).on_duplicate_key_update(relation=Relation.RELATION.FOLLOW)
+        update_statement = insert(Relation).values([{'user_id': userid, 'target_user_id': aut_id,
+                                                     'relation': Relation.RELATION.FOLLOW}]).on_duplicate_key_update(
+            relation=Relation.RELATION.FOLLOW)
         # 执行sql
         db.session.execute(update_statement)
         # 提交事务
@@ -60,16 +62,34 @@ class FollowUserResource(Resource):
         per_page = args.per_page
 
         # 查询数据
-        pn = User.query.options(load_only(User.id, User.name, User.profile_photo, User.fans_count)).join(Relation, User.id == Relation.target_user_id).filter(Relation.user_id == userid, Relation.relation == Relation.RELATION.FOLLOW).\
+        pn = User.query.options(load_only(User.id, User.name, User.profile_photo, User.fans_count)).join(Relation,
+                                                                                                         User.id == Relation.target_user_id).filter(
+            Relation.user_id == userid, Relation.relation == Relation.RELATION.FOLLOW). \
             order_by(Relation.update_time.desc()).paginate(page, per_page, error_out=False)
+
+        # 获取当前用户关注的所有作者
+        sub_query = db.session.query(Relation.author_id).filter(Relation.user_id == userid,
+                                                                Relation.relation == Relation.RELATION.FOLLOW)
+
+        # 查询当前用户的相互关注的粉丝
+        fans_list = Relation.query.options(load_only(Relation.user_id)).filter(Relation.target_user_id == userid,
+                                                                               Relation.user_id.in_(sub_query)).all()
+
         # 序列化
-        results = [{"id": item.id, "name": item.name, "photo": item.profile_photo, "fans_count": item.fans_count, "mutual_follow": False} for item in pn.items]
+        author_list = []
+        for item in pn.items:
+            author_dict = {"id": item.id, "name": item.name, "photo": item.profile_photo, "fans_count": item.fans_count,
+                           "mutual_follow": False}
+
+            # 如果该作者也关注了当前用户，则为互相关注
+            for fans in fans_list:
+                if item.id == fans.user_id:
+                    author_dict['mutual_follow'] = True
+                    break
+
+            author_list.append(author_dict)
         # 返回数据
-        return {'results': results, 'total_count': pn.total, 'page': pn.page, 'per_page': per_page}
-
-
-
-
+        return {'results': author_dict, 'total_count': pn.total, 'page': pn.page, 'per_page': per_page}
 
 
 class UnFollowUserResource(Resource):
@@ -80,8 +100,8 @@ class UnFollowUserResource(Resource):
         # 获取参数
         userid = g.userid
 
-        Relation.query.filter(Relation.user_id == userid, Relation.target_user_id == target, Relation.relation == Relation.RELATION.FOLLOW).update({'relation': 0})
+        Relation.query.filter(Relation.user_id == userid, Relation.target_user_id == target,
+                              Relation.relation == Relation.RELATION.FOLLOW).update({'relation': 0})
         db.session.commit()
         # 返回数据
         return {'target': target}
-
